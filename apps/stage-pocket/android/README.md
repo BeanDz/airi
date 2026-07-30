@@ -41,6 +41,23 @@ pnpm dev:android -- target <CAPACITOR_DEVICE_ID>
 CAPACITOR_DEVICE_ID_ANDROID=<CAPACITOR_DEVICE_ID> pnpm dev:android
 ```
 
+## Rear-screen LSPosed build
+
+The `rearScreen` flavor packages AIRI and the Xiaomi rear-screen LSPosed entrypoint in one APK.
+The regular `standard` flavor does not expose rear-screen controls or Xposed metadata.
+
+Build the web assets and sync Capacitor from the repository root, then assemble the Android flavor:
+
+```bash
+pnpm -F @proj-airi/stage-pocket build
+pnpm --dir apps/stage-pocket exec cap sync android
+
+cd apps/stage-pocket/android
+./gradlew :app:assembleRearScreenDebug
+```
+
+Install `app/build/outputs/apk/rearScreen/debug/app-rearScreen-debug.apk`, enable AIRI in LSPosed,
+keep the static scope set to `system`, and reboot before using the in-app display switch.
 
 ## Updating app icons and splash screens
 

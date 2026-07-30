@@ -3,6 +3,7 @@ package ai.moeru.airi_pocket
 import android.graphics.Color
 import android.net.Uri
 import android.net.http.SslError
+import android.os.Bundle
 import android.webkit.SslErrorHandler
 import android.webkit.WebView
 import com.getcapacitor.Bridge
@@ -11,6 +12,7 @@ import com.getcapacitor.BridgeWebViewClient
 import com.getcapacitor.Logger
 import org.json.JSONObject
 
+import ai.moeru.airi_pocket.rearscreen.RearScreenPlugin
 import ai.moeru.airi_pocket.websocket.HostWebSocketBridge
 import ai.moeru.airi_pocket.websocket.HostWebSocketEvent
 import ai.moeru.airi_pocket.websocket.HostWebSocketSession
@@ -25,6 +27,11 @@ class MainActivity : BridgeActivity() {
 
     private val webSocketBridgeClient = createHostWebSocketClient()
     private var webSocketBridge: HostWebSocketBridge? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        registerPlugin(RearScreenPlugin::class.java)
+        super.onCreate(savedInstanceState)
+    }
 
     override fun load() {
         super.load()

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <permission
+        android:name="ai.moeru.airi_pocket.permission.REAR_SCREEN_CONTROL"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="ai.moeru.airi_pocket.permission.REAR_SCREEN_CONTROL" />
+
+    <application android:description="@string/rear_screen_module_description" />
+</manifest>

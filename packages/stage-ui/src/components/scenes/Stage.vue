@@ -52,14 +52,23 @@ import { useSettings } from '../../stores/settings'
 import { useSpeechOutputControlStore } from '../../stores/speech-output-control'
 import { useSpeechRuntimeStore } from '../../stores/speech-runtime'
 
-const props = withDefaults(defineProps<{
+interface StageProps {
   cursorPosition?: { x: number, y: number }
   enableOrbitControls?: boolean
+  /** Allows renderers to shrink below their normal 25rem minimum on constrained displays. */
+  compactLayout?: boolean
   paused?: boolean
-}>(), {
+}
+
+const props = withDefaults(defineProps<StageProps>(), {
   enableOrbitControls: true,
+  compactLayout: false,
   paused: false,
 })
+
+const compactRendererStyle = computed(() => props.compactLayout
+  ? { minHeight: '0' }
+  : undefined)
 
 const componentState = defineModel<'pending' | 'loading' | 'mounted'>('state', { default: 'pending' })
 
@@ -1064,6 +1073,7 @@ defineExpose({
         v-model:state="componentState"
         min-w="50% <lg:full" min-h="100 sm:100"
         h-full w-full flex-1
+        :style="compactRendererStyle"
         :model-src="stageModelSelectedUrl"
         :model-id="stageModelSelected"
         :cursor-position="cursorPosition"
@@ -1081,6 +1091,7 @@ defineExpose({
         ref="vrmViewerRef"
         v-model:state="componentState"
         min-w="50% <lg:full" min-h="100 sm:100" h-full w-full flex-1
+        :style="compactRendererStyle"
         :model-src="stageModelSelectedUrl"
         :cursor-position="cursorPosition"
         :idle-animation="animations.idleLoop.toString()"
@@ -1097,6 +1108,7 @@ defineExpose({
         v-model:state="componentState"
         min-w="50% <lg:full" min-h="100 sm:100"
         h-full w-full flex-1
+        :style="compactRendererStyle"
         :model-src="stageModelSelectedUrl"
         :model-id="stageModelSelected"
         :paused="paused"
@@ -1112,6 +1124,7 @@ defineExpose({
         v-model:state="componentState"
         min-w="50% <lg:full" min-h="100 sm:100"
         h-full w-full flex-1
+        :style="compactRendererStyle"
         :model-src="stageModelSelectedUrl"
         :model-id="stageModelSelected"
         :paused="paused"
@@ -1125,6 +1138,7 @@ defineExpose({
         v-model:state="componentState"
         min-w="50% <lg:full" min-h="100 sm:100"
         h-full w-full flex-1
+        :style="compactRendererStyle"
         :model-src="stageModelSelectedUrl"
         :model-id="stageModelSelected"
         :paused="paused"

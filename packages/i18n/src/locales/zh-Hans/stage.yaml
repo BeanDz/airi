@@ -100,3 +100,9 @@ websocket-status:
   connected: 已连接
   disconnected: 无网络连接
   open-settings: 打开连接设置
+rear-screen:
+  move-to-rear: 转到背屏
+  move-to-main: 返回主屏
+  moving-to-rear: 正在转到背屏
+  moving-to-main: 正在返回主屏
+  unavailable: 背屏模块不可用

@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Modern LSPosed discovers the entrypoint by its class name in META-INF rather than a code reference.
+-keep class ai.moeru.airi_pocket.rearscreen.hook.RearScreenModule { *; }

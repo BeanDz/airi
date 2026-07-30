@@ -21,11 +21,16 @@ import { useProvidersStore } from '@proj-airi/stage-ui/stores/providers'
 import { useSettings, useSettingsAudioDevice } from '@proj-airi/stage-ui/stores/settings'
 import { breakpointsTailwind, useBreakpoints, useMouse } from '@vueuse/core'
 import { storeToRefs } from 'pinia'
-import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, onUnmounted, shallowRef, useTemplateRef, watch } from 'vue'
+import { toast } from 'vue-sonner'
 
+import RearScreenControls from '../components/rear-screen/RearScreenControls.vue'
+import RearScreenStage from '../components/rear-screen/RearScreenStage.vue'
 import WebSocketStatusButton from '../components/websocket-status-button.vue'
 
-const paused = ref(false)
+import { useRearScreen } from '../composables/useRearScreen'
+
+const paused = shallowRef(false)
 
 function handleSettingsOpen(open: boolean) {
   paused.value = open
@@ -34,6 +39,22 @@ function handleSettingsOpen(open: boolean) {
 const positionCursor = useMouse()
 const breakpoints = useBreakpoints(breakpointsTailwind)
 const isMobile = breakpoints.smaller('md')
+const {
+  supported: rearScreenSupported,
+  available: rearScreenAvailable,
+  display: rearScreenDisplay,
+  isRear,
+  moving: rearScreenMoving,
+  error: rearScreenError,
+  moveToRear,
+  moveToMain,
+} = useRearScreen()
+
+watch(rearScreenError, (message) => {
+  if (message) {
+    toast.error(message)
+  }
+})
 
 const backgroundStore = useBackgroundStore()
 const { selectedOption, sampledColor } = storeToRefs(backgroundStore)
@@ -63,7 +84,7 @@ const {
   start: startVAD,
   loaded: vadLoaded,
 } = useVAD(workletUrl, {
-  threshold: ref(0.6),
+  threshold: shallowRef(0.6),
   onSpeechStart: () => handleSpeechStart(),
   onSpeechEnd: () => handleSpeechEnd(),
 })
@@ -184,37 +205,68 @@ watch([stream, () => vadLoaded.value], async ([s, loaded]) => {
   >
     <div flex="~ col" relative z-2 h-100dvh w-100vw of-hidden py-safe>
       <!-- header -->
-      <div class="px-0 py-1 md:px-3 md:py-3" w-full gap-2>
+      <div v-if="!isRear" :class="['px-0 py-1 md:px-3 md:py-3']" w-full gap-2>
         <Header class="hidden md:flex" />
         <MobileHeader class="flex md:hidden" />
       </div>
       <!-- page -->
       <div relative flex="~ 1 row gap-y-0 gap-x-2 <md:col" min-h-0>
-        <div relative min-w="1/2" min-h-0 flex-1>
-          <div
-            absolute left-0 z-15 px-3
-            :class="[
-              stageModelRenderer === 'live2d' ? 'top-0 h-full py-[20vh]' : 'top-1/2 -translate-y-1/2',
-            ]"
-          >
-            <ViewControlSlider />
+        <RearScreenStage
+          v-if="isRear"
+          :cursor-position="{
+            x: positionCursor.x.value,
+            y: positionCursor.y.value,
+          }"
+          :paused="paused"
+        />
+        <template v-else>
+          <div relative min-w="1/2" min-h-0 flex-1>
+            <div
+              absolute left-0 z-15 px-3
+              :class="[
+                stageModelRenderer === 'live2d' ? 'top-0 h-full py-[20vh]' : 'top-1/2 -translate-y-1/2',
+              ]"
+            >
+              <ViewControlSlider />
+            </div>
+            <WidgetStage
+              h-full w-full
+              :enable-orbit-controls="!isMobile"
+              :paused="paused"
+              :focus-at="{
+                x: positionCursor.x.value,
+                y: positionCursor.y.value,
+              }"
+            />
           </div>
-          <WidgetStage
-            h-full w-full
-            :enable-orbit-controls="!isMobile"
-            :paused="paused"
-            :focus-at="{
-              x: positionCursor.x.value,
-              y: positionCursor.y.value,
-            }"
-          />
-        </div>
-        <InteractiveArea v-if="!isMobile" h="85dvh" absolute right-4 flex flex-1 flex-col max-w="500px" min-w="30%" />
-        <MobileInteractiveArea v-if="isMobile" @settings-open="handleSettingsOpen">
-          <template v-if="IS_DEV" #status>
-            <WebSocketStatusButton />
-          </template>
-        </MobileInteractiveArea>
+          <InteractiveArea v-if="!isMobile" h="85dvh" absolute right-4 flex flex-1 flex-col max-w="500px" min-w="30%" />
+          <MobileInteractiveArea v-if="isMobile" @settings-open="handleSettingsOpen">
+            <template #status>
+              <WebSocketStatusButton v-if="IS_DEV" />
+              <RearScreenControls
+                :supported="rearScreenSupported"
+                :available="rearScreenAvailable"
+                :display="rearScreenDisplay"
+                :moving="rearScreenMoving"
+                @move-to-rear="moveToRear"
+                @move-to-main="moveToMain"
+              />
+            </template>
+          </MobileInteractiveArea>
+        </template>
+      </div>
+      <div
+        v-if="isRear || !isMobile"
+        :class="!isRear ? 'fixed bottom-4 left-4 z-30' : undefined"
+      >
+        <RearScreenControls
+          :supported="rearScreenSupported"
+          :available="rearScreenAvailable"
+          :display="rearScreenDisplay"
+          :moving="rearScreenMoving"
+          @move-to-rear="moveToRear"
+          @move-to-main="moveToMain"
+        />
       </div>
     </div>
   </BackgroundProvider>

@@ -35,6 +35,8 @@ android {
     namespace = "ai.moeru.airi_pocket"
     compileSdk = androidCompileSdk
 
+    flavorDimensions += "distribution"
+
     defaultConfig {
         applicationId = "ai.moeru.airi_pocket"
         minSdk = androidMinSdk
@@ -42,6 +44,17 @@ android {
         versionCode = androidVersionCode
         versionName = androidVersionName
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    productFlavors {
+        create("standard") {
+            dimension = "distribution"
+            buildConfigField("boolean", "REAR_SCREEN_MODULE_ENABLED", "false")
+        }
+        create("rearScreen") {
+            dimension = "distribution"
+            buildConfigField("boolean", "REAR_SCREEN_MODULE_ENABLED", "true")
+        }
     }
 
     buildTypes {
@@ -52,6 +65,9 @@ android {
                 "proguard-rules.pro",
             )
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
     androidResources {
         // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -84,6 +100,7 @@ dependencies {
     androidTestImplementation("androidx.test.ext:junit:$androidxJunitVersion")
     androidTestImplementation("androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion")
     implementation(project(":capacitor-cordova-android-plugins"))
+    add("rearScreenCompileOnly", "io.github.libxposed:api:102.0.0")
 }
 
 apply(from = "capacitor.build.gradle")

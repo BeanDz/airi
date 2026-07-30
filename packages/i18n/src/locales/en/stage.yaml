@@ -100,3 +100,9 @@ websocket-status:
   connected: Connected
   disconnected: No connection
   open-settings: Open connection settings
+rear-screen:
+  move-to-rear: Move to rear screen
+  move-to-main: Return to main screen
+  moving-to-rear: Moving to rear screen
+  moving-to-main: Returning to main screen
+  unavailable: Rear-screen module unavailable
