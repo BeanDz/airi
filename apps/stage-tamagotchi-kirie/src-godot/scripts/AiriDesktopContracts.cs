@@ -4,8 +4,26 @@ using Eventa;
 using GdKirie.EventaAdapter;
 
 internal sealed record EmptyPayload;
-internal sealed record OpenSettingsPayload(string? Route);
+internal sealed record OpenSettingsPayload(string? Route)
+{
+    public string ResolveRoute()
+    {
+        if (string.IsNullOrEmpty(Route))
+        {
+            return "/settings";
+        }
+
+        if (!StringComparer.Ordinal.Equals(Route, "/settings")
+            && !Route.StartsWith("/settings/", StringComparison.Ordinal))
+        {
+            throw new ArgumentException("The settings route must start with /settings.", nameof(Route));
+        }
+
+        return Route;
+    }
+}
 internal sealed record SettingsNavigatePayload(string Route);
+internal sealed record MobileNavigatePayload(string Route, bool Replace);
 internal sealed record OpenDevtoolsWindowPayload(
     string Key,
     string? Route,
@@ -51,6 +69,12 @@ internal sealed record SpotlightShortcutRegistrationResultPayload(
 
 internal static class AiriDesktopEvents
 {
+    public static readonly EventDefinition<MobileNavigatePayload> MobileNavigate =
+        new("eventa:event:airi:mobile:navigate");
+
+    public static readonly EventDefinition<EmptyPayload> MobileBackRequested =
+        new("eventa:event:airi:mobile:back-requested");
+
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> OpenOnboarding =
         new("eventa:invoke:electron:windows:onboarding:open");
 
@@ -163,6 +187,12 @@ internal static class AiriDesktopContracts
     public static KirieEventaJsonRegistry Register(KirieEventaJsonRegistry registry)
     {
         return registry
+            .RegisterEvent(
+                AiriDesktopEvents.MobileNavigate,
+                AiriDesktopJsonContext.Default.MobileNavigatePayload)
+            .RegisterEvent(
+                AiriDesktopEvents.MobileBackRequested,
+                AiriDesktopJsonContext.Default.EmptyPayload)
             .RegisterInvoke(
                 AiriDesktopEvents.OpenOnboarding,
                 AiriDesktopJsonContext.Default.EmptyPayload,
@@ -289,6 +319,7 @@ internal static class AiriDesktopContracts
 [JsonSerializable(typeof(EmptyPayload))]
 [JsonSerializable(typeof(OpenSettingsPayload))]
 [JsonSerializable(typeof(SettingsNavigatePayload))]
+[JsonSerializable(typeof(MobileNavigatePayload))]
 [JsonSerializable(typeof(OpenDevtoolsWindowPayload))]
 [JsonSerializable(typeof(bool))]
 [JsonSerializable(typeof(NoticeOpenPayload))]
