@@ -1,8 +1,10 @@
 import type { GlobalShortcut, GlobalShortcutKeyEvent } from '@gd-kirie/platform'
 import type { ShortcutAccelerator, ShortcutBinding } from '@proj-airi/stage-shared/global-shortcut'
 
+import { notificationActivated } from '@gd-kirie/platform'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { airiSpotlightShortcutChanged } from '../../shared/eventa'
 import { toKirieGlobalShortcut, useHostGlobalShortcuts } from './global-shortcuts'
 import {
   startHostOwnedSpotlightShortcut,
@@ -13,14 +15,13 @@ import {
 const invoke = vi.hoisted(() => vi.fn())
 const openChat = vi.hoisted(() => vi.fn())
 const notifications = vi.hoisted(() => ({
-  onActivated: vi.fn(),
   show: vi.fn(),
 }))
 const platformShortcuts = vi.hoisted(() => ({
   register: vi.fn(),
   unregister: vi.fn(),
 }))
-const listeners = vi.hoisted(() => new Set<(event: { body?: ShortcutAccelerator }) => void>())
+const listeners = vi.hoisted(() => new Map<unknown, Set<(event: { body?: unknown }) => void>>())
 
 vi.mock('@moeru/eventa', async (importOriginal) => {
   const original = await importOriginal<typeof import('@moeru/eventa')>()
@@ -36,11 +37,17 @@ vi.mock('./owner', () => ({
   initializeHostContext: () => ({
     context: {
       on: (
-        _event: unknown,
-        listener: (event: { body?: ShortcutAccelerator }) => void,
+        event: unknown,
+        listener: (event: { body?: unknown }) => void,
       ) => {
-        listeners.add(listener)
-        return () => listeners.delete(listener)
+        let registered = listeners.get(event)
+        if (!registered) {
+          registered = new Set()
+          listeners.set(event, registered)
+        }
+        const subscription = registered
+        subscription.add(listener)
+        return () => subscription.delete(listener)
       },
     },
     platform: {
@@ -70,6 +77,15 @@ const rendererOwned: ShortcutBinding = {
   scope: 'global',
 }
 
+function emit(event: unknown, body: unknown): void {
+  const registered = listeners.get(event)
+  if (!registered)
+    return
+
+  for (const listener of registered)
+    listener({ body })
+}
+
 describe('spotlight host context', () => {
   beforeEach(async () => {
     listeners.clear()
@@ -80,7 +96,6 @@ describe('spotlight host context', () => {
     })
     openChat.mockReset().mockResolvedValue(undefined)
     notifications.show.mockReset().mockResolvedValue(undefined)
-    notifications.onActivated.mockReset().mockReturnValue(vi.fn())
     platformShortcuts.register.mockReset().mockResolvedValue(undefined)
     platformShortcuts.unregister.mockReset().mockResolvedValue(undefined)
     await useHostGlobalShortcuts().unregisterAll()
@@ -98,12 +113,6 @@ describe('spotlight host context', () => {
   })
 
   it('shows a Platform notification and opens Chat on activation', async () => {
-    let onActivated: ((event: { id: string }) => void) | undefined
-    notifications.onActivated.mockImplementation((listener: (event: { id: string }) => void) => {
-      onActivated = listener
-      return vi.fn()
-    })
-
     await useHostSpotlightWindow().showResultNotification('Hello from Spotlight')
 
     expect(notifications.show).toHaveBeenCalledWith({
@@ -113,7 +122,7 @@ describe('spotlight host context', () => {
     })
 
     const notificationId = notifications.show.mock.calls[0]![0].id as string
-    onActivated?.({ id: notificationId })
+    emit(notificationActivated, { id: notificationId })
     expect(openChat).toHaveBeenCalledOnce()
   })
 
@@ -207,8 +216,7 @@ describe('spotlight host context', () => {
       expect(platformShortcuts.register).toHaveBeenCalledOnce()
     })
 
-    for (const listener of listeners)
-      listener({ body: next })
+    emit(airiSpotlightShortcutChanged, next)
 
     await vi.waitFor(() => {
       expect(platformShortcuts.unregister).toHaveBeenCalledWith(toKirieGlobalShortcut(accelerator))

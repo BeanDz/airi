@@ -6,12 +6,18 @@ import { useHostWindowLifecycle } from './window-lifecycle'
 
 const platform = vi.hoisted(() => ({
   getState: vi.fn(),
-  onStateChanged: vi.fn(),
 }))
+
+const listeners = vi.hoisted(() => new Set<(event: { body?: HostWindowState }) => void>())
 
 vi.mock('./owner', () => ({
   initializeHostContext: () => ({
-    context: {},
+    context: {
+      on: (_event: unknown, listener: (event: { body?: HostWindowState }) => void) => {
+        listeners.add(listener)
+        return () => listeners.delete(listener)
+      },
+    },
     platform: { hostWindow: platform },
     runtime: 'kirie',
   }),
@@ -19,8 +25,8 @@ vi.mock('./owner', () => ({
 
 describe('kirie host window lifecycle', () => {
   beforeEach(() => {
+    listeners.clear()
     platform.getState.mockReset()
-    platform.onStateChanged.mockReset()
   })
 
   it('gets a native snapshot with AIRI lifecycle metadata', async () => {
@@ -41,19 +47,16 @@ describe('kirie host window lifecycle', () => {
   })
 
   it('labels native state transitions for the AIRI store', async () => {
-    let emitState: ((state: HostWindowState) => void) | undefined
     platform.getState.mockResolvedValue({ focused: true, minimized: false, visible: true })
-    platform.onStateChanged.mockImplementation((listener: (state: HostWindowState) => void) => {
-      emitState = listener
-      return vi.fn()
-    })
     const lifecycle = useHostWindowLifecycle()
     const listener = vi.fn()
     lifecycle.onChanged(listener)
     await lifecycle.getState()
 
-    emitState?.({ focused: false, minimized: true, visible: true })
-    emitState?.({ focused: true, minimized: false, visible: true })
+    for (const notify of listeners)
+      notify({ body: { focused: false, minimized: true, visible: true } })
+    for (const notify of listeners)
+      notify({ body: { focused: true, minimized: false, visible: true } })
 
     expect(listener).toHaveBeenNthCalledWith(1, expect.objectContaining({ reason: 'minimize' }))
     expect(listener).toHaveBeenNthCalledWith(2, expect.objectContaining({ reason: 'restore' }))
