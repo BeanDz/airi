@@ -31,12 +31,12 @@ an API for a feature that has no current in-scope failure.
 
 ## Current status
 
-`API-GAPS.md` contains 29 reproduced gaps:
+`API-GAPS.md` contains 30 reproduced gaps:
 
 | Status | Count | Gaps |
 | --- | ---: | --- |
 | Accepted | 24 | GAP-001 through GAP-009, GAP-011 through GAP-022, GAP-027 through GAP-029 |
-| In progress | 0 | None |
+| In progress | 1 | GAP-030 |
 | Review pending | 0 | None |
 | Runtime verification pending | 0 | None |
 | Open | 0 | None |

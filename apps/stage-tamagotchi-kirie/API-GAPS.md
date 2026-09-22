@@ -21,6 +21,8 @@ verified the Spotlight shortcut, its window, and its notification. The same
 review removed the Spotlight focus workarounds that the OpenGL compatibility
 renderer had required.
 
+GAP-030 was recorded on 2026-09-22 for the Android system Back request.
+
 Model rendering, model assets, Live2D, VRM, and MMD are outside the current scope.
 
 The status values have these meanings:
@@ -64,6 +66,7 @@ The status values have these meanings:
 | GAP-027 | Developer settings | Open main DevTools or a standalone devtools page | Electron opens WebContents DevTools and dedicated `BrowserWindow` instances | Open a connected CEF Inspector and reusable native devtools windows | AIRI developer tooling and window orchestration | Accepted | CEF Inspector and devtools pages work; Editor is outside the migration scope |
 | GAP-028 | All AIRI WebViews | Open more than one AIRI application window | Electron windows use a shared persistent browser session | Share one persistent CEF request context for cookies, storage, BroadcastChannel, Web Locks, and Pinia coordination | Godot CEF and AIRI dependency integration | Accepted | Godot CEF 1.16.1 runtime verified |
 | GAP-029 | Chat window | Send a message from the Kirie chat window | Electron answers `system-preferences:get-media-access-status` from its main process for every window | Every AIRI window context that awaits the microphone-permission contracts registers a handler for those contracts | AIRI Godot host and host context | Accepted | User review accepted the host Attach on 2026-09-20 |
+| GAP-030 | Android main renderer | Press the Android system Back button | Electron owns the application window and maps Back to window close or history | Deliver the system Back request to the main renderer so the page decides whether to navigate or quit | Kirie Platform and AIRI Godot host | In progress | Recorded 2026-09-22; `MobileNavigationService.RequestBack` bridges it in AIRI; [godot-kirie#90](https://github.com/moeru-ai/godot-kirie/pull/90) proposes the Kirie Platform capability |
 
 ## Audited but not reproduced
 
@@ -442,3 +445,13 @@ reproduces a failure. The 2026-09-17 audit found these remaining surfaces:
 - Fix verification: On 2026-09-20 in real CEF, a fresh chat window completed its mount sequence, loaded the replicated session index with a non-empty `activeSessionId`, and sent a message without manual recovery. The user message entered the session and the assistant reply streamed into the history.
 - Adapter decision: [godot-kirie#87](https://github.com/moeru-ai/godot-kirie/pull/87) proposed a default reject for an unhandled invoke. That change was closed without merge. The AIRI window `Attach` is the required fix.
 - Acceptance result: The user accepted GAP-029 after a live chat send in the running AIRI application.
+
+## GAP-030 evidence
+
+- Input: Press the Android system Back button in the main renderer.
+- Original result: Godot delivers the request only to the host as `Node.NOTIFICATION_WM_GO_BACK_REQUEST` and the bound window's `Window.GoBackRequested` signal. The WebView receives nothing, so the page cannot decide between route Back and application exit.
+- Current AIRI bridge: `Main.cs` disables `SceneTree.QuitOnGoBack` and forwards the notification through `MobileNavigationService.RequestBack` to the custom `eventa:event:airi:mobile:back-requested` event. `installMobileNavigation` subscribes in the renderer and applies the route or quit policy.
+- Ownership: System Back is a general platform input, like global shortcuts and desktop notifications. The design rules put the transport in Kirie Platform and keep the navigation policy in the page.
+- Required result: Kirie Platform emits a system Back request to the renderer. The renderer decides whether Back changes the route or closes the application.
+- Proposed upstream fix: [godot-kirie#90](https://github.com/moeru-ai/godot-kirie/pull/90) adds `back.onRequested()` to `@gd-kirie/platform`. `GdKiriePlatformHost` connects to `Window.GoBackRequested` and re-emits `kirie:platform:back:requested`. The decision is recorded as ADR-0005 in that repository.
+- Reopen condition: After a Kirie release includes the capability, subscribe through `platform.back.onRequested()`, delete the custom back event, and remove `MobileNavigationService.RequestBack` and the `Main.cs` notification bridge.
