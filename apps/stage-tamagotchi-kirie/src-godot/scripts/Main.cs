@@ -34,7 +34,8 @@ public partial class Main : Node
         bool isAndroid = OS.HasFeature("android");
         if (isAndroid)
         {
-            // Vue Router consumes Android Back before the root route can quit the app.
+            // GdKiriePlatformHost forwards Android Back to the renderer's backRequested
+            // event. Keep the engine from quitting first so the page can decide.
             GetTree().QuitOnGoBack = false;
         }
         else
@@ -176,14 +177,6 @@ public partial class Main : Node
     {
         _auth?.ProcessPending();
         _microphonePermissions?.Process();
-    }
-
-    public override void _Notification(int what)
-    {
-        if (what == NotificationWMGoBackRequest)
-        {
-            _mobileNavigation?.RequestBack();
-        }
     }
 
     private string ResolveInitialUrl()

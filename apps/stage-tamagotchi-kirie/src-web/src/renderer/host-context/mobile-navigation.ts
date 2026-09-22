@@ -1,7 +1,9 @@
 import type { EventContext } from '@moeru/eventa'
 import type { Router } from 'vue-router'
 
-import { mobileBackRequested, mobileNavigate } from '../../shared/eventa/mobile'
+import { backRequested } from '@gd-kirie/platform'
+
+import { mobileNavigate } from '../../shared/eventa/mobile'
 
 /** Returns to the previous app route, or home after a direct route launch. */
 export async function returnToStage(router: Router): Promise<void> {
@@ -28,7 +30,7 @@ export function installMobileNavigation<Extensions, EmitOptions>(context: EventC
     else
       await router.push(body.route)
   })
-  const stopBack = context.on(mobileBackRequested, async () => {
+  const stopBack = context.on(backRequested, async () => {
     if (router.currentRoute.value.path === '/') {
       await quit()
       return

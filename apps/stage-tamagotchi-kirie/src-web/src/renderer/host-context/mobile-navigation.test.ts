@@ -1,8 +1,9 @@
+import { backRequested } from '@gd-kirie/platform'
 import { createContext } from '@moeru/eventa'
 import { describe, expect, it, vi } from 'vitest'
 import { createMemoryHistory, createRouter } from 'vue-router'
 
-import { mobileBackRequested, mobileNavigate } from '../../shared/eventa/mobile'
+import { mobileNavigate } from '../../shared/eventa/mobile'
 import { installMobileNavigation, returnToStage } from './mobile-navigation'
 
 function createTestRouter() {
@@ -46,11 +47,11 @@ describe('android single-window navigation', () => {
 
     await context.emit(mobileNavigate, { route: '/', replace: true })
     expect(router.currentRoute.value.path).toBe('/')
-    await context.emit(mobileBackRequested, {})
+    await context.emit(backRequested, {})
     expect(quit).toHaveBeenCalledOnce()
 
     dispose()
-    await context.emit(mobileBackRequested, {})
+    await context.emit(backRequested, {})
     expect(quit).toHaveBeenCalledOnce()
   })
 

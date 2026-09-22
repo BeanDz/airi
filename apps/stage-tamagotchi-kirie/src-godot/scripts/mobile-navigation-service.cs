@@ -42,12 +42,6 @@ internal sealed class MobileNavigationService : IDisposable
         ];
     }
 
-    public void RequestBack()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _context.Emit(AiriDesktopEvents.MobileBackRequested, new EmptyPayload());
-    }
-
     public void Dispose()
     {
         if (_disposed)

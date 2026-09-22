@@ -63,13 +63,6 @@ internal static class Program
         await context.CreateInvokeClient(AiriDesktopEvents.CloseOnboarding).InvokeAsync(new EmptyPayload());
         AssertEqual(new MobileNavigatePayload("/", true), routes[^1], "onboarding return replaces history");
 
-        int backRequests = 0;
-        using var backSubscription = context.Subscribe(
-            AiriDesktopEvents.MobileBackRequested,
-            _ => backRequests++);
-        navigation.RequestBack();
-        AssertEqual(1, backRequests, "mobile hardware back request");
-
         int routeCount = routes.Count;
         try
         {
@@ -89,17 +82,6 @@ internal static class Program
         catch (Exception error) when (error.Message.Contains("CEF inspector is not available", StringComparison.Ordinal))
         {
             AssertEqual(routeCount, routes.Count, "unsupported desktop inspector emits no navigation");
-        }
-
-        navigation.Dispose();
-        try
-        {
-            navigation.RequestBack();
-            throw new InvalidOperationException("A disposed navigation service emitted a back request.");
-        }
-        catch (ObjectDisposedException)
-        {
-            AssertEqual(1, backRequests, "disposed mobile navigation emits no back request");
         }
     }
 

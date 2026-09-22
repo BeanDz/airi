@@ -72,9 +72,6 @@ internal static class AiriDesktopEvents
     public static readonly EventDefinition<MobileNavigatePayload> MobileNavigate =
         new("eventa:event:airi:mobile:navigate");
 
-    public static readonly EventDefinition<EmptyPayload> MobileBackRequested =
-        new("eventa:event:airi:mobile:back-requested");
-
     public static readonly InvokeEventDefinition<EmptyPayload, EmptyPayload> OpenOnboarding =
         new("eventa:invoke:electron:windows:onboarding:open");
 
@@ -190,9 +187,6 @@ internal static class AiriDesktopContracts
             .RegisterEvent(
                 AiriDesktopEvents.MobileNavigate,
                 AiriDesktopJsonContext.Default.MobileNavigatePayload)
-            .RegisterEvent(
-                AiriDesktopEvents.MobileBackRequested,
-                AiriDesktopJsonContext.Default.EmptyPayload)
             .RegisterInvoke(
                 AiriDesktopEvents.OpenOnboarding,
                 AiriDesktopJsonContext.Default.EmptyPayload,
